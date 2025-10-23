@@ -323,6 +323,10 @@ public class InAppPurchasePlugin: NSObject, FlutterPlugin, FIAInAppPurchaseAPI {
   public func startObservingPaymentQueueWithError(
     _ error: AutoreleasingUnsafeMutablePointer<FlutterError?>
   ) {
+    if #available(iOS 15.0, macOS 12.0, *) {
+      return
+    }
+
     getPaymentQueueHandler().startObservingPaymentQueue()
   }
 
