@@ -242,7 +242,7 @@ extension Transaction {
       expirationDate: expirationDate.map { dateFormatter.string(from: $0) },
       purchasedQuantity: Int64(purchasedQuantity),
       appAccountToken: appAccountToken?.uuidString,
-      restoring: receipt != nil,
+      restoring: false,
       receiptData: receipt,
       jsonRepresentation: String(decoding: jsonRepresentation, as: UTF8.self)
     )

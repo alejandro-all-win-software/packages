@@ -91,8 +91,14 @@ extension InAppPurchasePlugin: InAppPurchase2API {
         case .success(let verification):
           sendTransactionUpdate(
             transaction: verification.unsafePayloadValue, receipt: verification.jwsRepresentation)
-        case .pending, .userCancelled:
+        case .pending:
           break
+        case .userCancelled:
+          let error = PigeonError(
+            code: "storekit2_user_cancelled",
+            message: "User cancelled the purchase.",
+            details: "Product ID : \(id)")
+          completion(.failure(error))
         @unknown default:
           fatalError("An unknown StoreKit PurchaseResult has been encountered.")
         }
@@ -239,7 +245,10 @@ extension InAppPurchasePlugin: InAppPurchase2API {
           switch completedPurchase {
           case .verified(let purchase):
             self.sendTransactionUpdate(
-              transaction: purchase, receipt: "\(completedPurchase.jwsRepresentation)")
+              transaction: purchase,
+              receipt: "\(completedPurchase.jwsRepresentation)",
+              isRestored: true
+            )
           case .unverified(let failedPurchase, let error):
             unverifiedPurchases[failedPurchase.id] = (
               receipt: completedPurchase.jwsRepresentation, error: error
@@ -332,8 +341,14 @@ extension InAppPurchasePlugin: InAppPurchase2API {
   }
 
   /// Sends an transaction back to Dart. Access these transactions with `purchaseStream`
-  private func sendTransactionUpdate(transaction: Transaction, receipt: String? = nil) {
-    let transactionMessage = transaction.convertToPigeon(receipt: receipt)
+  private func sendTransactionUpdate(
+    transaction: Transaction,
+    receipt: String? = nil,
+    isRestored: Bool = false
+  ) {
+    var transactionMessage = transaction.convertToPigeon(receipt: receipt)
+    transactionMessage.restoring = isRestored
+
     Task { @MainActor in
       self.transactionCallbackAPI?.onTransactionsUpdated(newTransactions: [transactionMessage]) {
         result in
