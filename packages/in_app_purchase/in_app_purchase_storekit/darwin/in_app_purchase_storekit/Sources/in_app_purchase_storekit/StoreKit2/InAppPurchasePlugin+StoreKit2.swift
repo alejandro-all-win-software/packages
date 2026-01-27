@@ -267,10 +267,8 @@ extension InAppPurchasePlugin: InAppPurchase2API {
           switch completedPurchase {
           case .verified(let purchase):
             self.sendTransactionUpdate(
-              transaction: purchase,
-              receipt: "\(completedPurchase.jwsRepresentation)",
-              isRestored: true
-            )
+              transaction: purchase, receipt: "\(completedPurchase.jwsRepresentation)",
+              restoring: true)
           case .unverified(let failedPurchase, let error):
             unverifiedPurchases[failedPurchase.id] = (
               receipt: completedPurchase.jwsRepresentation, error: error
@@ -364,13 +362,9 @@ extension InAppPurchasePlugin: InAppPurchase2API {
 
   /// Sends an transaction back to Dart. Access these transactions with `purchaseStream`
   private func sendTransactionUpdate(
-    transaction: Transaction,
-    receipt: String? = nil,
-    isRestored: Bool = false
+    transaction: Transaction, receipt: String? = nil, restoring: Bool = false
   ) {
-    var transactionMessage = transaction.convertToPigeon(receipt: receipt)
-    transactionMessage.restoring = isRestored
-
+    let transactionMessage = transaction.convertToPigeon(receipt: receipt, restoring: restoring)
     Task { @MainActor in
       self.transactionCallbackAPI?.onTransactionsUpdated(newTransactions: [transactionMessage]) {
         result in
